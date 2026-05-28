@@ -2,7 +2,7 @@
   "name": "epam",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://ltiiii.github.io/epam",
+  "homepage": "https://ltiiii.github.io/epam-race/",
   "type": "module",
   "scripts": {
     "dev": "vite",
