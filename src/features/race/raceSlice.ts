@@ -22,6 +22,14 @@ function msToSec(durationMs: number): number {
   return Number((durationMs / 1000).toFixed(2));
 }
 
+function clampProgress(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function getCarState(state: { race: RaceState }, id: number): CarRaceState {
+  return state.race.byCarId[id] ?? { status: 'idle', durationMs: 0, progress: 0, runId: 0 };
+}
+
 async function saveWinner(id: number, time: number): Promise<void> {
   const winner = await winnersApi.fetchWinnerById(id);
   if (!winner) {
@@ -36,15 +44,88 @@ export const stopCar = createAsyncThunk('race/stopCar', async (id: number) => {
   return { id };
 });
 
-export const startCar = createAsyncThunk('race/startCar', async (car: Car, thunkApi) => {
-  thunkApi.dispatch(setCarState({ id: car.id, state: { status: 'starting', durationMs: 0 } }));
+function setStarting(thunkApi: Parameters<typeof startCarPayload>[1], carId: number, runId: number): void {
+  thunkApi.dispatch(
+    setCarState({
+      id: carId,
+      state: { status: 'starting', durationMs: 0, progress: 0, runId },
+    }),
+  );
+}
+
+function setDriving(
+  thunkApi: Parameters<typeof startCarPayload>[1],
+  carId: number,
+  runId: number,
+  durationMs: number,
+): void {
+  thunkApi.dispatch(
+    setCarState({
+      id: carId,
+      state: { status: 'driving', durationMs, progress: 1, runId },
+    }),
+  );
+}
+
+function setBroken(
+  thunkApi: Parameters<typeof startCarPayload>[1],
+  carId: number,
+  runId: number,
+  progress: number,
+): void {
+  thunkApi.dispatch(
+    setCarState({
+      id: carId,
+      state: { status: 'broken', durationMs: 0, progress, runId },
+    }),
+  );
+}
+
+function setFinished(thunkApi: Parameters<typeof startCarPayload>[1], carId: number, runId: number): void {
+  thunkApi.dispatch(
+    setCarState({
+      id: carId,
+      state: { status: 'finished', durationMs: 0, progress: 1, runId },
+    }),
+  );
+}
+
+async function startCarPayload(car: Car, thunkApi: {
+  dispatch: (action: unknown) => unknown;
+  getState: () => unknown;
+}): Promise<{ id: number; name: string; elapsedMs: number }> {
+  const before = getCarState(thunkApi.getState() as { race: RaceState }, car.id);
+  const runId = before.runId + 1;
+  const startedAt = performance.now();
+  setStarting(thunkApi, car.id, runId);
   const started = await engineApi.setEngineStatus(car.id, 'started');
+  const afterStart = getCarState(thunkApi.getState() as { race: RaceState }, car.id);
+  if (afterStart.runId !== runId) {
+    return { id: car.id, name: car.name, elapsedMs: Number.MAX_SAFE_INTEGER };
+  }
   const durationMs = Math.round(started.distance / started.velocity);
-  thunkApi.dispatch(setCarState({ id: car.id, state: { status: 'driving', durationMs } }));
-  await engineApi.driveEngine(car.id);
-  thunkApi.dispatch(setCarState({ id: car.id, state: { status: 'finished', durationMs } }));
-  return { id: car.id, name: car.name, durationMs };
-});
+  setDriving(thunkApi, car.id, runId, durationMs);
+
+  try {
+    await engineApi.driveEngine(car.id);
+  } catch (error) {
+    const elapsedMs = Math.round(performance.now() - startedAt);
+    const progress = clampProgress(elapsedMs / durationMs);
+    setBroken(thunkApi, car.id, runId, progress);
+    throw error;
+  }
+
+  const afterDrive = getCarState(thunkApi.getState() as { race: RaceState }, car.id);
+  if (afterDrive.runId !== runId) {
+    return { id: car.id, name: car.name, elapsedMs: Number.MAX_SAFE_INTEGER };
+  }
+  const elapsedMs = Math.round(performance.now() - startedAt);
+  setFinished(thunkApi, car.id, runId);
+  return { id: car.id, name: car.name, elapsedMs };
+}
+
+export const startCar = createAsyncThunk('race/startCar', async (car: Car, thunkApi) =>
+  startCarPayload(car, thunkApi));
 
 export const startRace = createAsyncThunk('race/startRace', async (cars: Car[], thunkApi) => {
   thunkApi.dispatch(startRaceSession());
@@ -54,15 +135,16 @@ export const startRace = createAsyncThunk('race/startRace', async (cars: Car[], 
   const tasks = cars.map((car) => thunkApi.dispatch(startCar(car)).unwrap());
   const settled = await Promise.allSettled(tasks);
   const success = settled
-    .filter((item): item is PromiseFulfilledResult<{ id: number; name: string; durationMs: number }> => item.status === 'fulfilled')
+    .filter((item): item is PromiseFulfilledResult<{ id: number; name: string; elapsedMs: number }> => item.status === 'fulfilled')
     .map((item) => item.value)
-    .sort((a, b) => a.durationMs - b.durationMs);
+    .filter((item) => Number.isFinite(item.elapsedMs))
+    .sort((a, b) => a.elapsedMs - b.elapsedMs);
 
   const isStillActive = (thunkApi.getState() as { race: RaceState }).race.activeRaceId === raceId;
 
   if (success[0] && isStillActive) {
     const [best] = success;
-    const time = msToSec(best.durationMs);
+    const time = msToSec(best.elapsedMs);
     await saveWinner(best.id, time);
     thunkApi.dispatch(setWinnerMessage(`${best.name} won in ${time}s`));
   }
@@ -87,7 +169,8 @@ const raceSlice = createSlice({
     },
     resetCarsState(state, action: PayloadAction<number[]>) {
       action.payload.forEach((id) => {
-        state.byCarId[id] = { status: 'idle', durationMs: 0 };
+        const current = state.byCarId[id] ?? { status: 'idle', durationMs: 0, progress: 0, runId: 0 };
+        state.byCarId[id] = { status: 'idle', durationMs: 0, progress: 0, runId: current.runId + 1 };
       });
       state.winnerMessage = null;
       state.raceRunning = false;
@@ -99,12 +182,19 @@ const raceSlice = createSlice({
   },
   extraReducers(builder) {
     builder
-      .addCase(startCar.rejected, (state, action) => {
-        const { id } = action.meta.arg;
-        state.byCarId[id] = { status: 'broken', durationMs: 0 };
-      })
       .addCase(stopCar.fulfilled, (state, action) => {
-        state.byCarId[action.payload.id] = { status: 'idle', durationMs: 0 };
+        const current = state.byCarId[action.payload.id] ?? {
+          status: 'idle',
+          durationMs: 0,
+          progress: 0,
+          runId: 0,
+        };
+        state.byCarId[action.payload.id] = {
+          status: 'idle',
+          durationMs: 0,
+          progress: 0,
+          runId: current.runId + 1,
+        };
       });
   },
 });

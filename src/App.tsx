@@ -4,16 +4,22 @@ import WinnersPage from './pages/WinnersPage';
 
 function App(): JSX.Element {
   return (
-    <div style={{ margin: '0 auto', maxWidth: 960, padding: 16 }}>
-      <nav style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <Link to="/garage">Garage</Link>
-        <Link to="/winners">Winners</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Navigate to="/garage" replace />} />
-        <Route path="/garage" element={<GaragePage />} />
-        <Route path="/winners" element={<WinnersPage />} />
-      </Routes>
+    <div className="app-shell">
+      <header className="app-header">
+        <p className="app-kicker">Async Race</p>
+        <nav className="app-nav">
+          <Link to="/garage">Garage</Link>
+          <Link to="/winners">Winners</Link>
+        </nav>
+      </header>
+      <main className="app-main">
+        <Routes>
+          <Route path="/" element={<Navigate to="/garage" replace />} />
+          <Route path="/garage" element={<GaragePage />} />
+          <Route path="/winners" element={<WinnersPage />} />
+        </Routes>
+      </main>
+      <footer className="app-footer">Built for RS School Async Race</footer>
     </div>
   );
 }

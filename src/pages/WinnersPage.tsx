@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
+import CarIcon from '../components/CarIcon';
 import { WINNERS_PAGE_SIZE } from '../constants/common';
 import { setWinnersPage } from '../features/ui/uiSlice';
 import { loadWinners, setWinnersSort } from '../features/winners/winnersSlice';
@@ -15,8 +16,8 @@ function WinnersPage(): JSX.Element {
   }, [dispatch, winnersPage, sort, order]);
 
   return (
-    <section>
-      <h1>Winners ({totalCount})</h1>
+    <section className="page-card">
+      <h1 className="page-title">Winners ({totalCount})</h1>
       {error ? <p>{error}</p> : null}
       {loading ? <p>Loading...</p> : <WinnersTable />}
       <WinnersPagination pagesTotal={pagesTotal} />
@@ -31,7 +32,7 @@ function WinnersTable(): JSX.Element {
   const order = useAppSelector((s) => s.winners.order);
 
   return (
-    <table cellPadding={8}>
+    <table className="winners-table" cellPadding={8}>
       <WinnersHead sort={sort} order={order} />
       <tbody>
         {items.map((winner, index) => (
@@ -51,8 +52,22 @@ function WinnersHead({ sort, order }: { sort: string; order: string }): JSX.Elem
         <th>№</th>
         <th>Car</th>
         <th>Name</th>
-        <th><SortButton active={sort === 'wins'} order={order} title="Wins" onClick={() => dispatch(setWinnersSort('wins'))} /></th>
-        <th><SortButton active={sort === 'time'} order={order} title="Best time (s)" onClick={() => dispatch(setWinnersSort('time'))} /></th>
+        <th>
+          <SortButton
+            active={sort === 'wins'}
+            order={order}
+            title="Wins"
+            onClick={() => dispatch(setWinnersSort('wins'))}
+          />
+        </th>
+        <th>
+          <SortButton
+            active={sort === 'time'}
+            order={order}
+            title="Best time (s)"
+            onClick={() => dispatch(setWinnersSort('time'))}
+          />
+        </th>
       </tr>
     </thead>
   );
@@ -68,7 +83,7 @@ function WinnerRow(props: {
     <tr>
       <td>{(winnersPage - 1) * WINNERS_PAGE_SIZE + index + 1}</td>
       <td>
-        <div aria-label="car-color" style={{ width: 32, height: 12, backgroundColor: winner.car?.color ?? '#666' }} />
+        <CarIcon color={winner.car?.color ?? '#666'} width={44} />
       </td>
       <td>{winner.car?.name ?? `Car #${winner.id}`}</td>
       <td>{winner.wins}</td>
@@ -102,10 +117,16 @@ function WinnersPagination({ pagesTotal }: { pagesTotal: number }): JSX.Element 
   const page = useAppSelector((s) => s.ui.winnersPage);
 
   return (
-    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-      <button type="button" disabled={page <= 1} onClick={() => dispatch(setWinnersPage(page - 1))}>Prev</button>
-      <span>Page {page} / {pagesTotal}</span>
-      <button type="button" disabled={page >= pagesTotal} onClick={() => dispatch(setWinnersPage(page + 1))}>Next</button>
+    <div className="pager">
+      <button type="button" disabled={page <= 1} onClick={() => dispatch(setWinnersPage(page - 1))}>
+        Prev
+      </button>
+      <span>
+        Page {page} / {pagesTotal}
+      </span>
+      <button type="button" disabled={page >= pagesTotal} onClick={() => dispatch(setWinnersPage(page + 1))}>
+        Next
+      </button>
     </div>
   );
 }

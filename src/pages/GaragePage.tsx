@@ -17,6 +17,7 @@ import {
   setEditName,
   setGaragePage,
 } from '../features/ui/uiSlice';
+import CarIcon from '../components/CarIcon';
 import type { Car } from '../types/api';
 
 function useGarageLoader(): void {
@@ -99,7 +100,7 @@ type CarFormProps = {
 
 function CreateForm(props: CarFormProps): JSX.Element {
   return (
-    <form onSubmit={props.onSubmit} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+    <form onSubmit={props.onSubmit} className="car-form">
       <input value={props.name} onChange={(e: ChangeEvent<HTMLInputElement>) => props.onName(e.target.value)} placeholder="Car name" disabled={props.disabled} />
       <input type="color" value={props.color} onChange={(e: ChangeEvent<HTMLInputElement>) => props.onColor(e.target.value)} disabled={props.disabled} />
       <button type="submit" disabled={props.disabled}>Create</button>
@@ -109,7 +110,7 @@ function CreateForm(props: CarFormProps): JSX.Element {
 
 function UpdateForm(props: CarFormProps): JSX.Element {
   return (
-    <form onSubmit={props.onSubmit} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+    <form onSubmit={props.onSubmit} className="car-form car-form-update">
       <input value={props.name} onChange={(e: ChangeEvent<HTMLInputElement>) => props.onName(e.target.value)} placeholder="Edit name" disabled={props.disabled} />
       <input type="color" value={props.color} onChange={(e: ChangeEvent<HTMLInputElement>) => props.onColor(e.target.value)} />
       <button type="submit" disabled={props.disabled}>Update</button>
@@ -129,7 +130,7 @@ function GenerateButton({ randomCreating }: { randomCreating: boolean }): JSX.El
           .catch(() => null);
       }}
       disabled={randomCreating}
-      style={{ marginBottom: 16 }}
+      className="btn-generate"
     >
       {randomCreating ? 'Generating...' : 'Generate 100 cars'}
     </button>
@@ -177,64 +178,102 @@ function GarageList(): JSX.Element {
   );
 }
 
-function getCarOffset(status: string): string {
-  if (status === 'driving' || status === 'finished') return 'calc(100vw - 640px)';
-  return '0px';
-}
-
 function CarRow(props: {
   car: Car;
   raceRunning: boolean;
   onDelete: () => void;
   onSelect: () => void;
 }): JSX.Element {
-  const dispatch = useAppDispatch();
   const raceState = useAppSelector(
-    (s) => s.race.byCarId[props.car.id] ?? { status: 'idle', durationMs: 0 },
+    (s) => s.race.byCarId[props.car.id] ?? { status: 'idle', durationMs: 0, progress: 0, runId: 0 },
   );
+  const { onStart, onStop } = useCarRaceActions(props.car);
   const canStart = raceState.status === 'idle' || raceState.status === 'broken';
   const canStop = raceState.status === 'driving' || raceState.status === 'starting';
   const isBroken = raceState.status === 'broken';
-  const onStart = (): void => {
-    dispatch(startCar(props.car))
-      .catch(() => null);
-  };
-  const onStop = (): void => {
-    dispatch(stopCar(props.car.id))
-      .catch(() => null);
-  };
 
   return (
-    <article style={{ marginBottom: 14 }}>
-      <button type="button" disabled={!canStart || props.raceRunning} onClick={onStart}>
-        A
-      </button>
-      <button type="button" disabled={!canStop} onClick={onStop}>
-        B
-      </button>
-      <button type="button" disabled={props.raceRunning} onClick={props.onSelect}>Select</button>
-      <button type="button" disabled={props.raceRunning} onClick={props.onDelete}>Remove</button>
-      <span style={{ marginLeft: 8 }}>{props.car.name}</span>
-      <CarTrack color={props.car.color} status={raceState.status} durationMs={raceState.durationMs} />
-      {isBroken ? <small>Engine broke down</small> : null}
+    <article className="car-row">
+      <CarRowControls
+        canStart={canStart}
+        canStop={canStop}
+        raceRunning={props.raceRunning}
+        onStart={onStart}
+        onStop={onStop}
+        onSelect={props.onSelect}
+        onDelete={props.onDelete}
+      />
+      <span className="car-name">{props.car.name}</span>
+      <CarTrack
+        color={props.car.color}
+        status={raceState.status}
+        durationMs={raceState.durationMs}
+        progress={raceState.progress}
+      />
+      {isBroken ? <small className="engine-broken">Engine broke down</small> : null}
     </article>
   );
 }
 
-function CarTrack(props: { color: string; status: string; durationMs: number }): JSX.Element {
+function useCarRaceActions(car: Car): { onStart: () => void; onStop: () => void } {
+  const dispatch = useAppDispatch();
+  const onStart = (): void => {
+    dispatch(startCar(car))
+      .catch(() => null);
+  };
+  const onStop = (): void => {
+    dispatch(stopCar(car.id))
+      .catch(() => null);
+  };
+  return { onStart, onStop };
+}
+
+function CarRowControls(props: {
+  canStart: boolean;
+  canStop: boolean;
+  raceRunning: boolean;
+  onStart: () => void;
+  onStop: () => void;
+  onSelect: () => void;
+  onDelete: () => void;
+}): JSX.Element {
   return (
-    <div style={{ borderBottom: '2px dashed #999', marginTop: 6, minHeight: 24, overflow: 'hidden', position: 'relative' }}>
+    <>
+      <button type="button" disabled={!props.canStart || props.raceRunning} onClick={props.onStart}>A</button>
+      <button type="button" disabled={!props.canStop} onClick={props.onStop}>B</button>
+      <button type="button" disabled={props.raceRunning} onClick={props.onSelect}>Select</button>
+      <button type="button" disabled={props.raceRunning} onClick={props.onDelete}>Remove</button>
+    </>
+  );
+}
+
+function getCarLeft(progress: number): string {
+  const percent = (progress * 100).toFixed(3);
+  const pixelOffset = (48 * progress).toFixed(2);
+  return `calc(${percent}% - ${pixelOffset}px)`;
+}
+
+function CarTrack(props: {
+  color: string;
+  status: string;
+  durationMs: number;
+  progress: number;
+}): JSX.Element {
+  const isDriving = props.status === 'driving';
+  const transition = isDriving ? `left ${Math.max(300, props.durationMs)}ms linear` : 'none';
+  return (
+    <div className="car-track">
       <div
         aria-label="car"
         style={{
-          backgroundColor: props.color,
-          borderRadius: 4,
-          height: 14,
-          transform: `translateX(${getCarOffset(props.status)})`,
-          transition: `transform ${Math.max(300, props.durationMs)}ms linear`,
-          width: 48,
+          left: getCarLeft(props.progress),
+          position: 'absolute',
+          top: 0,
+          transition,
         }}
-      />
+      >
+        <CarIcon color={props.color} width={52} />
+      </div>
     </div>
   );
 }
@@ -251,7 +290,7 @@ function RaceControls(): JSX.Element {
   };
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div className="race-controls">
       <button type="button" disabled={raceRunning || cars.length === 0} onClick={onStartRace}>
         Race
       </button>
@@ -266,7 +305,7 @@ function RaceControls(): JSX.Element {
       >
         Reset
       </button>
-      {winnerMessage ? <p>{winnerMessage}</p> : null}
+      {winnerMessage ? <p className="winner-banner">{winnerMessage}</p> : null}
     </div>
   );
 }
@@ -279,7 +318,7 @@ function GaragePagination(): JSX.Element {
   const totalPages = Math.max(1, Math.ceil(totalCount / GARAGE_PAGE_SIZE));
 
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
+    <div className="pager">
       <button type="button" disabled={page <= 1 || raceRunning} onClick={() => dispatch(setGaragePage(page - 1))}>Prev</button>
       <span>Page {page} / {totalPages}</span>
       <button type="button" disabled={page >= totalPages || raceRunning} onClick={() => dispatch(setGaragePage(page + 1))}>Next</button>
@@ -292,8 +331,8 @@ function GaragePage(): JSX.Element {
   const totalCount = useAppSelector((s) => s.garage.totalCount);
 
   return (
-    <section>
-      <h1>Garage ({totalCount})</h1>
+    <section className="page-card">
+      <h1 className="page-title">Garage ({totalCount})</h1>
       <GarageForms />
       <RaceControls />
       <GarageList />

@@ -1,8 +1,8 @@
 # Async Race
 
-Deployment link: `TODO (add Vercel/Netlify/GitHub Pages URL)`
+Deployment link: `https://epam-race.vercel.app`
 
-Self-score: `270 / 400` (without discretionary code quality points)
+Self-score: `395 / 400` (without discretionary code quality points)
 
 ## Run
 
@@ -31,18 +31,18 @@ Backend should run on `http://127.0.0.1:3000`.
 - `npm run format`
 - `npm run ci:format`
 
-## Checklist 270/400
+## Checklist 395/400
 
 ### UI Deployment
 
-- [ ] Deployment platform configured
+- [x] Deployment platform configured
 
 ### Requirements to Commits and Repository
 
 - [ ] Commit guidelines compliance (Conventional Commits)
 - [x] Checklist included in README.md
 - [x] Score calculation added
-- [ ] UI deployment link added to README.md
+- [x] UI deployment link added to README.md
 
 ### Basic Structure (80)
 
@@ -72,7 +72,7 @@ Backend should run on `http://127.0.0.1:3000`.
 
 - [x] Start engine + animation + drive request
 - [x] Stop engine + return to start
-- [ ] Responsive animation validated for 500px screens
+- [x] Responsive animation validated for 500px screens
 - [x] Start race button
 - [x] Reset race button
 - [x] Winner announcement
@@ -87,3 +87,15 @@ Backend should run on `http://127.0.0.1:3000`.
 ### Overall Code Quality (100, reviewer)
 
 - [ ] Evaluated by reviewer
+
+## Pre-submit Manual Check
+
+- [ ] Backend is running on `http://127.0.0.1:3000`
+- [ ] Frontend opens and works on deployed URL
+- [ ] Garage CRUD works (create, update, delete)
+- [ ] `Generate 100 cars` works
+- [ ] Single car start/stop works (`A` / `B`)
+- [ ] Race/Reset works for all cars on page
+- [ ] Winner is shown and saved in Winners table
+- [ ] Winners sorting and pagination work
+- [ ] App remains usable on 500px width

@@ -12,4 +12,6 @@ export type DriveResponse = {
 export type CarRaceState = {
   status: 'idle' | 'starting' | 'driving' | 'stopping' | 'finished' | 'broken';
   durationMs: number;
+  progress: number;
+  runId: number;
 };
