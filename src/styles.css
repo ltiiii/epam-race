@@ -1,0 +1,245 @@
+:root {
+  --bg: #f2f4f8;
+  --panel: #ffffff;
+  --text: #1d2433;
+  --muted: #6c7385;
+  --line: #d9deea;
+  --accent: #0f7bff;
+  --accent-2: #ff6b35;
+  --good: #1ea672;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(circle at 15% 15%, #ffffff 0%, #f2f4f8 45%),
+    linear-gradient(180deg, #f8faff 0%, #eef2f9 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 14px rgb(15 123 255 / 16%);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 10px;
+  background: #fff;
+  color: var(--text);
+}
+
+input:focus {
+  outline: 2px solid rgb(15 123 255 / 18%);
+  border-color: var(--accent);
+}
+
+.app-shell {
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 20px 16px 28px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.app-kicker {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.app-nav {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.app-nav a {
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-weight: 700;
+}
+
+.app-nav a:hover {
+  background: #f2f6ff;
+}
+
+.app-main {
+  display: grid;
+  gap: 14px;
+}
+
+.app-footer {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.page-card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgb(21 40 86 / 7%);
+}
+
+.page-title {
+  margin: 0 0 12px;
+  letter-spacing: 0.03em;
+}
+
+.car-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.car-form-update {
+  margin-bottom: 16px;
+}
+
+.btn-generate {
+  margin-bottom: 16px;
+}
+
+.race-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px;
+  border: 1px dashed #c9d2e8;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f8fbff 0%, #f8f4ff 100%);
+  margin-bottom: 14px;
+}
+
+.winner-banner {
+  margin: 0;
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid #acdcbc;
+  background: #ebfff4;
+  color: #1f6d39;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.car-row {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e6f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fe 100%);
+}
+
+.car-name {
+  margin-left: 8px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.engine-broken {
+  color: #b13030;
+  font-weight: 700;
+}
+
+.car-track {
+  border-bottom: 2px dashed #bac5df;
+  margin-top: 8px;
+  min-height: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pager {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.winners-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.winners-table th,
+.winners-table td {
+  padding: 8px;
+  border-bottom: 1px solid #e8edf8;
+  text-align: left;
+}
+
+.winners-table th {
+  background: #f5f8ff;
+}
+
+.winners-table tr:nth-child(even) td {
+  background: #fbfcff;
+}
+
+@media (max-width: 700px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 500px) {
+  body {
+    font-size: 14px;
+  }
+
+  .page-card {
+    padding: 12px;
+  }
+
+  button {
+    padding: 5px 9px;
+  }
+}
